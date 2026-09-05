@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vertex Trader">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Vertex Trader v3</title>
+<style>
+:root{--bg:#07090c;--card:#10141a;--card2:#151a21;--line:#29313b;--text:#f4f6f8;--muted:#909baa;--gold:#e7b85c;--green:#28d17c;--red:#ff5b68;--blue:#5aa7ff}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,Arial,sans-serif}
+body{min-height:100vh}.app{max-width:1100px;margin:auto;padding:12px 12px 30px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 14px;position:sticky;top:0;z-index:10;background:linear-gradient(var(--bg) 82%,transparent)}
+.brand{font-weight:900;font-size:20px}.brand span{color:var(--gold)}.status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}.dot{width:8px;height:8px;border-radius:50%;background:var(--red)}.dot.on{background:var(--green)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:13px;box-shadow:0 8px 30px rgba(0,0,0,.15);margin-bottom:10px}.grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px}.wide{grid-column:1/-1}
+.symbols{display:flex;gap:7px;overflow:auto;scrollbar-width:none}.symbols::-webkit-scrollbar{display:none}.sym{border:1px solid var(--line);background:var(--card2);color:var(--muted);padding:9px 12px;border-radius:11px;white-space:nowrap;font-weight:800}.sym.active{color:var(--text);border-color:#66717d}
+.header{display:flex;align-items:end;justify-content:space-between;gap:10px}.pair{font-size:20px;font-weight:900}.sub{font-size:11px;color:var(--muted);margin-top:3px}.price{font-size:28px;font-weight:900}.change{font-size:11px;text-align:right}.up{color:var(--green)}.down{color:var(--red)}
+.chartbox{height:390px;margin-top:8px;position:relative}.chartbox canvas{width:100%;height:100%;display:block}.legend{position:absolute;left:8px;top:7px;font-size:10px;background:rgba(7,9,12,.78);padding:5px 7px;border-radius:7px;color:var(--muted);pointer-events:none}
+.countdown{font-size:11px;color:var(--muted);text-align:right;margin-top:3px}
+.signal{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;background:var(--card2);border:1px solid var(--line)}.signal strong{font-size:14px}.badge{font-size:11px;font-weight:950;padding:7px 9px;border-radius:8px;white-space:nowrap}.badge.long{color:var(--green);background:rgba(40,209,124,.12)}.badge.short{color:var(--red);background:rgba(255,91,104,.12)}.badge.wait{color:var(--muted);background:#20262e}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px}.metric label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px}.metric b{font-size:15px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.control{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:9px}.control label{display:block;font-size:10px;color:var(--muted);margin-bottom:6px}.control input,.control select{width:100%;background:#0c1015;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px;outline:none}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:9px}.btn{border:0;border-radius:10px;padding:11px;font-weight:900}.longbtn{background:var(--green);color:#04140b}.shortbtn{background:var(--red);color:#1a0508}.flatbtn,.smallbtn{background:#252d37;color:white}.smallbtn{border:1px solid var(--line);padding:7px 9px;border-radius:8px;font-size:10px}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:9px}.kv div{background:#0d1116;border-radius:9px;padding:8px}.kv small{display:block;color:var(--muted);font-size:9px}.kv b{font-size:12px}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:8px}.empty{font-size:12px;color:var(--muted);padding:8px 0}
+.table{width:100%;border-collapse:collapse;font-size:11px}.table th,.table td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:right}.table th:first-child,.table td:first-child{text-align:left}
+.footer{font-size:10px;color:#697482;line-height:1.45;margin-top:8px}
+.error{display:none;background:rgba(255,91,104,.1);border:1px solid rgba(255,91,104,.35);color:#ff9da6;border-radius:10px;padding:9px;font-size:11px;margin-bottom:10px}.error.show{display:block}
+@media(max-width:759px){.grid{display:block}.wide{grid-column:auto}.chartbox{height:350px}.top{padding-top:7px}.actions{grid-template-columns:1fr 1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="brand">VERTEX <span>TRADER</span></div><div class="status"><i id="dot" class="dot"></i><span id="status">Starting…</span></div></header>
+<div id="error" class="error"></div>
+<div class="card"><div id="symbols" class="symbols"></div></div>
+
+<div class="grid">
+<section class="card">
+  <div class="header">
+    <div><div id="pair" class="pair">BTC/USDT.P</div><div id="sub" class="sub">45m · Live Bybit</div></div>
+    <div><div id="price" class="price">—</div><div id="change" class="change">—</div></div>
+  </div>
+  <div class="chartbox"><canvas id="chart"></canvas><div class="legend">● Price &nbsp; <span style="color:#e7b85c">— ZLSMA 38</span> &nbsp; <span style="color:#5aa7ff">— CE</span></div></div>
+  <div id="countdown" class="countdown">Next 45m candle: —</div>
+  <div class="signal"><div><strong id="signalText">Loading strategy…</strong><div id="signalDetail" class="sub">CE 4/2 · ZLSMA 38 · MACD 5/35/5</div></div><div id="badge" class="badge wait">WAIT</div></div>
+</section>
+
+<aside class="card">
+  <div class="metrics">
+    <div class="metric"><label>Balance</label><b id="balance">$1,000.00</b></div>
+    <div class="metric"><label>Equity</label><b id="equity">$1,000.00</b></div>
+    <div class="metric"><label>Realized P&L</label><b id="realized">$0.00</b></div>
+    <div class="metric"><label>Trades</label><b id="trades">0</b></div>
+  </div>
+  <div class="controls">
+    <div class="control"><label>Leverage</label><select id="lev"><option>1</option><option>2</option><option>3</option><option selected>5</option><option>8</option><option>10</option><option>15</option><option>20</option></select></div>
+    <div class="control"><label>Margin / trade</label><input id="margin" type="number" min="1" value="100"></div>
+    <div class="control"><label>ATR TP ×</label><input id="tp" type="number" min=".1" step=".1" value="4"></div>
+    <div class="control"><label>ATR SL ×</label><input id="sl" type="number" min=".1" step=".1" value="2"></div>
+  </div>
+  <div class="actions"><button id="long" class="btn longbtn">LONG</button><button id="short" class="btn shortbtn">SHORT</button><button id="close" class="btn flatbtn">CLOSE</button></div>
+  <div class="sub" style="margin-top:8px">Manual orders use current market price and current ATR(4).</div>
+</aside>
+
+<section class="card">
+  <div class="sectionhead"><strong>Open Position</strong><button id="reset" class="smallbtn">Reset $1,000</button></div>
+  <div id="position" style="margin-top:9px"></div>
+</section>
+
+<section class="card">
+  <strong>Indicators</strong>
+  <div class="kv">
+    <div><small>Timeframe</small><b>45m</b></div><div><small>Chandelier</small><b>ATR 4 × 2</b></div>
+    <div><small>ZLSMA</small><b>38</b></div><div><small>MACD</small><b>5 / 35 / 5</b></div>
+    <div><small>TP</small><b id="tpl">4 × ATR</b></div><div><small>SL</small><b id="sll">2 × ATR</b></div>
+  </div>
+</section>
+
+<section class="card wide"><div class="sectionhead"><strong>Trade History</strong><button id="notify" class="smallbtn">Enable alerts</button></div><div id="history" style="margin-top:7px"></div></section>
+</div>
+<div class="footer">Paper trading only. Market data is public Bybit data. Strategy signals are evaluated only after a 45-minute candle is closed. Bybit provides 15m klines, so three 15m candles are aggregated into each 45m candle.</div>
+</div>
+
+<script>
+"use strict";
+const C={symbols:["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","DOGEUSDT"],ws:"wss://stream.bybit.com/v5/public/linear",rest:"https://api.bybit.com/v5/market/kline",ticker:"https://api.bybit.com/v5/market/tickers",interval:15,agg:3};
+const S={selected:"BTCUSDT",raw:{},candles:{},ticks:{},signals:{},ws:null,reconnectTimer:null,lastWs:0};
+const $=id=>document.getElementById(id);
+const money=x=>Number.isFinite(x)?x.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}):"—";
+const num=x=>Number.isFinite(x)?x.toLocaleString("en-US",{maximumFractionDigits:x<1?6:2}):"—";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function showError(msg){$("error").textContent=msg;$("error").classList.add("show");}
+function clearError(){$("error").classList.remove("show")}
+function bucketStart(ts){return Math.floor(ts/(45*60000))*(45*60000)}
+function aggregate(raw){
+ const map=new Map();
+ for(const q of raw){
+   const b=bucketStart(q.start);let x=map.get(b);
+   if(!x)x={start:b,open:q.open,high:q.high,low:q.low,close:q.close,volume:q.volume};
+   else{x.high=Math.max(x.high,q.high);x.low=Math.min(x.low,q.low);x.close=q.close;x.volume+=q.volume}
+   map.set(b,x);
+ }
+ return [...map.values()].sort((a,b)=>a.start-b.start);
+}
+function closed45(c){const b=bucketStart(Date.now());return c.filter(x=>x.start<b)}
+function sma(a,n){let out=Array(a.length).fill(NaN),s=0;for(let i=0;i<a.length;i++){s+=a[i];if(i>=n)s-=a[i-n];if(i>=n-1)out[i]=s/n}return out}
+function ema(a,n){let out=Array(a.length).fill(NaN),k=2/(n+1),v=null;for(let i=0;i<a.length;i++){if(!Number.isFinite(a[i]))continue;if(v===null)v=a[i];else v=a[i]*k+v*(1-k);out[i]=v}return out}
+function linreg(a,n){let o=Array(a.length).fill(NaN),sx=n*(n-1)/2,sxx=n*(n-1)*(2*n-1)/6,den=n*sxx-sx*sx;for(let i=n-1;i<a.length;i++){let sy=0,sxy=0;for(let j=0;j<n;j++){let y=a[i-n+1+j];if(!Number.isFinite(y)){sy=NaN;break}sy+=y;sxy+=j*y}if(!Number.isFinite(sy))continue;let m=(n*sxy-sx*sy)/den,b=(sy-m*sx)/n;o[i]=b+m*(n-1)}return o}
+
+
+function zlsma(a,n){const l1=linreg(a,n),l2=linreg(l1,n),o=Array(a.length).fill(NaN);for(let i=0;i<a.length;i++)if(Number.isFinite(l1[i])&&Number.isFinite(l2[i]))o[i]=l1[i]+(l1[i]-l2[i]);return o}
+function macd(a,f,s,sg){
+ const ef=ema(a,f),es=ema(a,s),line=a.map((_,i)=>Number.isFinite(ef[i])&&Number.isFinite(es[i])?ef[i]-es[i]:NaN);
+ const compact=line.filter(Number.isFinite),se=ema(compact,sg),sig=Array(a.length).fill(NaN);let k=0;
+ for(let i=0;i<a.length;i++)if(Number.isFinite(line[i]))sig[i]=se[k++];
+ return {line,sig}
+}
+function strategy(c){
+ const n=c.length;if(n<85)return null;
+ const close=c.map(x=>x.close),high=c.map(x=>x.high),low=c.map(x=>x.low);
+ const tr=close.map((_,i)=>{const p=i?close[i-1]:close[i];return Math.max(high[i]-low[i],Math.abs(high[i]-p),Math.abs(low[i]-p))});
+ const atr=sma(tr,4), z=zlsma(close,38), m=macd(close,5,35,5);
+ let dir=1;
+ const dirs=Array(n).fill(1),ceLong=Array(n).fill(NaN),ceShort=Array(n).fill(NaN);
+ for(let i=0;i<n;i++){
+   const a=atr[i]*2;
+   const from=Math.max(0,i-3);
+   let hh=-Infinity,ll=Infinity;
+   for(let j=from;j<=i;j++){hh=Math.max(hh,high[j]);ll=Math.min(ll,low[j])}
+   ceLong[i]=hh-a;ceShort[i]=ll+a;
+   if(i>0){if(close[i]>ceShort[i-1])dir=1;else if(close[i]<ceLong[i-1])dir=-1}
+   dirs[i]=dir;
+ }
+ const i=n-1;
+ const longCond=dirs[i]===1&&close[i]>z[i]&&m.line[i]>m.sig[i];
+ const shortCond=dirs[i]===-1&&close[i]<z[i]&&m.line[i]<m.sig[i];
+ const exitLong=dirs[i]===-1||close[i]<z[i]||m.line[i]<m.sig[i];
+ const exitShort=dirs[i]===1||close[i]>z[i]||m.line[i]>m.sig[i];
+ return {time:c[i].start,close:close[i],atr:atr[i],z:z[i],macd:m.line[i],macdSig:m.sig[i],dir:dirs[i],ce:dirs[i]===1?ceLong[i]:ceShort[i],longCond,shortCond,exitLong,exitShort};
+}
+function evaluate(sym){
+ const closed=closed45(S.candles[sym]||[]);if(closed.length<90)return;
+ const r=strategy(closed);if(!r)return;
+ const old=S.signals[sym]?.time;S.signals[sym]=r;
+ if(old!==r.time)handleSignal(sym,r);
+}
+function handleSignal(sym,r){
+ const p=paper.position;
+ if(p&&p.symbol===sym){
+   if((p.side==="LONG"&&r.exitLong)||(p.side==="SHORT"&&r.exitShort))paper.close("Strategy exit",r.close);
+ }
+ // Signals are notifications only. They do NOT automatically open a paper trade.
+ if(r.longCond) notify(sym,"BUY / LONG signal",`45m close ${num(r.close)} · ATR ${num(r.atr)}`);
+ if(r.shortCond) notify(sym,"SELL / SHORT signal",`45m close ${num(r.close)} · ATR ${num(r.atr)}`);
+}
+async function loadHistory(sym){
+ try{
+   const u=`${C.rest}?category=linear&symbol=${sym}&interval=15&limit=1000`;
+   const j=await fetch(u,{cache:"no-store"}).then(r=>r.json());
+   if(j.retCode!==0)throw Error(j.retMsg||"Bybit REST error");
+   S.raw[sym]=j.result.list.reverse().map(x=>({start:+x[0],open:+x[1],high:+x[2],low:+x[3],close:+x[4],volume:+x[5]}));
+   S.candles[sym]=aggregate(S.raw[sym]);evaluate(sym);
+   if(sym===S.selected)draw();
+ }catch(e){console.error(sym,e);if(sym===S.selected)showError("Bybit history could not be loaded. Live price fallback will be attempted.")}
+}
+function updateRaw(sym,q){
+ if(!S.raw[sym])S.raw[sym]=[];
+ const a=S.raw[sym],i=a.findIndex(x=>x.start===q.start);
+ if(i>=0)a[i]=q;else{a.push(q);a.sort((x,y)=>x.start-y.start)}
+ S.raw[sym]=a.slice(-1000);S.candles[sym]=aggregate(S.raw[sym]);evaluate(sym);
+}
+async function fallbackTickers(){
+ try{
+   const j=await fetch(`${C.ticker}?category=linear`,{cache:"no-store"}).then(r=>r.json());
+   if(j.retCode!==0)return;
+   for(const x of j.result.list||[])if(C.symbols.includes(x.symbol)){S.ticks[x.symbol]={price:+x.lastPrice,time:Date.now()};if(x.price24hPcnt!=null)S.ticks[x.symbol].change=+x.price24hPcnt*100}
+   if(S.ticks[S.selected])clearError();draw();
+ }catch(e){showError("Cannot reach Bybit REST API. Check Safari network access or GitHub Pages HTTPS.");}
+}
+function connect(){
+ try{S.ws?.close()}catch{}
+ const ws=new WebSocket(C.ws);S.ws=ws;
+ ws.onopen=()=>{$("dot").classList.add("on");$("status").textContent="Bybit live";S.lastWs=Date.now();clearError();ws.send(JSON.stringify({op:"subscribe",args:C.symbols.flatMap(s=>[`kline.15.${s}`,`tickers.${s}`])}));fallbackTickers()};
+ ws.onmessage=e=>{
+   let m;try{m=JSON.parse(e.data)}catch{return}
+   if(m.op==="pong")return;
+   if(m.topic?.startsWith("kline.15.")){
+     const sym=m.topic.split(".").pop();
+     for(const d of (m.data||[]))updateRaw(sym,{start:+d.start,open:+d.open,high:+d.high,low:+d.low,close:+d.close,volume:+d.volume,confirm:!!d.confirm});
+   }else if(m.topic?.startsWith("tickers.")){
+     const sym=m.topic.split(".").pop(),d=Array.isArray(m.data)?m.data[0]:m.data;
+     if(d?.lastPrice){S.ticks[sym]={price:+d.lastPrice,time:Date.now(),change:d.price24hPcnt!=null?+d.price24hPcnt*100:S.ticks[sym]?.change};}
+     if(sym===S.selected){paper.mark();draw()}
+   }
+ };
+ ws.onerror=()=>{try{ws.close()}catch{}};
+ ws.onclose=()=>{$("dot").classList.remove("on");$("status").textContent="Reconnecting…";clearTimeout(S.reconnectTimer);S.reconnectTimer=setTimeout(connect,2500)};
+}
+setInterval(()=>{if(S.ws?.readyState===1)S.ws.send(JSON.stringify({op:"ping"}));else if(Date.now()-S.lastWs>8000)fallbackTickers()},20000);
+setInterval(()=>{if(S.selected)draw()},1000);
+
+class Paper{
+ constructor(){this.load()}
+ load(){try{const x=JSON.parse(localStorage.getItem("vertexPaperV3"));if(x){this.balance=x.balance;this.position=x.position;this.history=x.history;return}}catch{}this.reset(false)}
+ save(){localStorage.setItem("vertexPaperV3",JSON.stringify({balance:this.balance,position:this.position,history:this.history}))}
+ reset(save=true){this.balance=1000;this.position=null;this.history=[];if(save)this.save();render()}
+ open(side,sym,entry,atr){
+   if(this.position||!Number.isFinite(entry)||!Number.isFinite(atr)||atr<=0)return;
+   const margin=Math.min(Math.max(1,+$("margin").value||100),this.balance),lev=+$("lev").value||5,tpM=+$("tp").value||4,slM=+$("sl").value||2;
+   const qty=margin*lev/entry,tp=side==="LONG"?entry+atr*tpM:entry-atr*tpM,sl=side==="LONG"?entry-atr*slM:entry+atr*slM;
+   this.position={side,symbol:sym,entry,qty,margin,lev,atr,tp,sl,opened:Date.now()};this.save();render()
+ }
+ close(reason,px=null){
+   const p=this.position;if(!p)return;const price=px??S.ticks[p.symbol]?.price??p.entry;
+   const pnl=p.side==="LONG"?(price-p.entry)*p.qty:(p.entry-price)*p.qty;
+   const fee=(p.entry*p.qty+price*p.qty)*0.00055,net=pnl-fee;
+   this.balance+=net;this.history.unshift({time:Date.now(),symbol:p.symbol,side:p.side,entry:p.entry,exit:price,pnl:net,reason});this.history=this.history.slice(0,100);this.position=null;this.save();render()
+ }
+ mark(){
+   const p=this.position;if(!p)return;const px=S.ticks[p.symbol]?.price;if(!px)return;
+   if(p.side==="LONG"&&px<=p.sl)this.close("ATR SL",p.sl);
+   else if(p.side==="LONG"&&px>=p.tp)this.close("ATR TP",p.tp);
+   else if(p.side==="SHORT"&&px>=p.sl)this.close("ATR SL",p.sl);
+   else if(p.side==="SHORT"&&px<=p.tp)this.close("ATR TP",p.tp);
+   else render()
+ }
+ equity(){const p=this.position;if(!p)return this.balance;const px=S.ticks[p.symbol]?.price??p.entry;return this.balance+(p.side==="LONG"?(px-p.entry)*p.qty:(p.entry-px)*p.qty)}
+}
+const paper=new Paper();
+
+function render(){
+ const rp=paper.history.reduce((a,x)=>a+x.pnl,0);
+ $("balance").textContent=money(paper.balance);$("equity").textContent=money(paper.equity());$("realized").textContent=money(rp);$("realized").className=rp>=0?"up":"down";$("trades").textContent=paper.history.length;
+ $("tpl").textContent=`${$("tp").value} × ATR`;$("sll").textContent=`${$("sl").value} × ATR`;
+ const p=paper.position;
+ if(!p)$("position").innerHTML='<div class="empty">No open position.</div>';
+ else{const px=S.ticks[p.symbol]?.price??p.entry,pnl=p.side==="LONG"?(px-p.entry)*p.qty:(p.entry-px)*p.qty;$("position").innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><b class="${p.side==="LONG"?"up":"down"}">${p.side} · ${p.symbol}.P</b><div class="sub">${p.lev}× leverage · ${money(p.margin)} margin</div></div><b class="${pnl>=0?"up":"down"}">${money(pnl)}</b></div><div class="kv"><div><small>Entry</small><b>${num(p.entry)}</b></div><div><small>Current</small><b>${num(px)}</b></div><div><small>TP</small><b class="up">${num(p.tp)}</b></div><div><small>SL</small><b class="down">${num(p.sl)}</b></div></div>`}
+ const h=paper.history;
+ $("history").innerHTML=h.length?`<table class="table"><thead><tr><th>Trade</th><th>Entry</th><th>Exit</th><th>P&L</th></tr></thead><tbody>${h.slice(0,15).map(x=>`<tr><td>${x.side} ${x.symbol}<br><span class="sub">${new Date(x.time).toLocaleString()}</span></td><td>${num(x.entry)}</td><td>${num(x.exit)}<br><span class="sub">${x.reason}</span></td><td class="${x.pnl>=0?"up":"down"}">${money(x.pnl)}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">No completed trades yet.</div>';
+}
+function resize(cv){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;cv.width=Math.max(1,r.width*d);cv.height=Math.max(1,r.height*d);return [r.width,r.height,d]}
+function drawChart(c,live,r){
+ const cv=$("chart"),ctx=cv.getContext("2d"),[w,h,d]=resize(cv);ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);if(c.length<2)return;
+ const a=c.slice(-90),values=a.flatMap(q=>[q.high,q.low]);if(live)values.push(live);let min=Math.min(...values),max=Math.max(...values),pad=(max-min)*.08||1;min-=pad;max+=pad;
+ const X=i=>2+i*(w-4)/(a.length-1),Y=v=>h-5-(v-min)/(max-min)*(h-10);
+ ctx.strokeStyle="#232a33";ctx.lineWidth=1;for(let k=1;k<5;k++){ctx.beginPath();ctx.moveTo(0,h*k/5);ctx.lineTo(w,h*k/5);ctx.stroke()}
+ // ZLSMA and CE calculated on the displayed 45m data
+ const close=a.map(q=>q.close),z=zlsma(close,38);
+ let ce=[];const tr=close.map((_,i)=>{const p=i?close[i-1]:close[i];return Math.max(a[i].high-a[i].low,Math.abs(a[i].high-p),Math.abs(a[i].low-p))}),atr=sma(tr,4);let dir=1;
+ for(let i=0;i<a.length;i++){let hh=-Infinity,ll=Infinity;for(let j=Math.max(0,i-3);j<=i;j++){hh=Math.max(hh,a[j].high);ll=Math.min(ll,a[j].low)}let ls=hh-atr[i]*2,ss=ll+atr[i]*2;if(i>0){if(close[i]>ce[i-1]?.ss)dir=1;else if(close[i]<ce[i-1]?.ls)dir=-1}ce.push({ls,ss,dir})}
+ function line(vals,get){ctx.beginPath();let st=false;for(let i=0;i<vals.length;i++){const v=get(vals[i],i);if(!Number.isFinite(v))continue;const xx=X(i),yy=Y(v);if(!st){ctx.moveTo(xx,yy);st=true}else ctx.lineTo(xx,yy)}ctx.stroke()}
+ ctx.strokeStyle="#e7b85c";ctx.lineWidth=1.5;line(z,(v)=>v);
+ ctx.strokeStyle="#5aa7ff";ctx.lineWidth=1.2;line(ce,(v)=>v.dir===1?v.ls:v.ss);
+ a.forEach((q,i)=>{const xx=X(i),yo=Y(q.open),yc=Y(q.close),yh=Y(q.high),yl=Y(q.low),up=q.close>=q.open;ctx.strokeStyle=up?"#28d17c":"#ff5b68";ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(xx,yh);ctx.lineTo(xx,yl);ctx.stroke();const cw=Math.max(2,(w/a.length)*.58);ctx.fillRect(xx-cw/2,Math.min(yo,yc),cw,Math.max(1,Math.abs(yc-yo)))});
+ if(r){
+   const idx=a.findIndex(x=>x.start===r.time);
+   if(idx>=0&&(r.longCond||r.shortCond)){ctx.fillStyle=r.longCond?"#28d17c":"#ff5b68";ctx.beginPath();if(r.longCond){const xx=X(idx),yy=Y(a[idx].low);ctx.moveTo(xx,yy+13);ctx.lineTo(xx-6,yy+3);ctx.lineTo(xx+6,yy+3)}else{const xx=X(idx),yy=Y(a[idx].high);ctx.moveTo(xx,yy-13);ctx.lineTo(xx-6,yy-3);ctx.lineTo(xx+6,yy-3)}ctx.closePath();ctx.fill()}
+ }
+ if(live){ctx.strokeStyle="#5aa7ff";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(0,Y(live));ctx.lineTo(w,Y(live));ctx.stroke();ctx.setLineDash([])}
+}
+function draw(){
+ const sym=S.selected,c=S.candles[sym]||[],live=S.ticks[sym]?.price,r=S.signals[sym];
+ $("pair").textContent=sym.replace("USDT","/USDT")+".P";$("price").textContent=live?num(live):"—";
+ const ch=S.ticks[sym]?.change;$("change").textContent=Number.isFinite(ch)?`${ch>=0?"+":""}${ch.toFixed(2)}% 24h`:"—";$("change").className="change "+(ch>=0?"up":"down");
+ const b=$("badge");if(r?.longCond){b.textContent="BUY / LONG";b.className="badge long";$("signalText").textContent="Long conditions confirmed";$("signalDetail").textContent=`CE ${r.dir} · ZLSMA ${num(r.z)} · MACD ${num(r.macd)} > ${num(r.macdSig)}`}else if(r?.shortCond){b.textContent="SELL / SHORT";b.className="badge short";$("signalText").textContent="Short conditions confirmed";$("signalDetail").textContent=`CE ${r.dir} · ZLSMA ${num(r.z)} · MACD ${num(r.macd)} < ${num(r.macdSig)}`}else{b.textContent="WAIT";b.className="badge wait";$("signalText").textContent="No new entry signal";$("signalDetail").textContent="CE 4/2 · ZLSMA 38 · MACD 5/35/5"}
+ const next=bucketStart(Date.now())+45*60000;let sec=Math.max(0,Math.floor((next-Date.now())/1000));$("countdown").textContent=`Next 45m candle: ${String(Math.floor(sec/60)).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`;
+ drawChart(c,live,r);render()
+}
+function notify(sym,title,body){if("Notification"in window&&Notification.permission==="granted")new Notification(`${sym.replace("USDT","/USDT")}.P — ${title}`,{body,icon:"icons/icon-192.png"})}
+$("symbols").innerHTML=C.symbols.map(s=>`<button class="sym ${s===S.selected?"active":""}" data-s="${s}">${s.replace("USDT","/USDT")}</button>`).join("");
+document.querySelectorAll(".sym").forEach(b=>b.onclick=()=>{S.selected=b.dataset.s;document.querySelectorAll(".sym").forEach(x=>x.classList.toggle("active",x===b));draw()});
+$("long").onclick=()=>{const s=S.selected,px=S.ticks[s]?.price,atr=S.signals[s]?.atr;if(px&&atr)paper.open("LONG",s,px,atr)};
+$("short").onclick=()=>{const s=S.selected,px=S.ticks[s]?.price,atr=S.signals[s]?.atr;if(px&&atr)paper.open("SHORT",s,px,atr)};
+$("close").onclick=()=>paper.close("Manual close");
+$("reset").onclick=()=>{if(confirm("Reset paper account to $1,000?"))paper.reset()};
+$("notify").onclick=async()=>{if("Notification"in window){const p=await Notification.requestPermission();$("notify").textContent=p==="granted"?"Alerts enabled":"Alerts unavailable"}};
+["lev","margin","tp","sl"].forEach(id=>$(id).oninput=render);
+window.addEventListener("resize",draw);
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(console.warn);
+C.symbols.forEach(loadHistory);fallbackTickers();connect();render();
+</script>
+</body>
+</html>
